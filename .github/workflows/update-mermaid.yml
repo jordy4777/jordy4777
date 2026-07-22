@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Tag Tree with Full Child Queries
+      - name: Generate Multi-level Tag List with Global Search OR
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -91,7 +91,7 @@ jobs:
                   topics.update(get_all_child_topics(child))
               return topics
 
-          # 4. 마크다운 생성 (하위 태그 키워드들을 띄어쓰기로 나열하여 통합 검색)
+          # 4. 마크다운 생성 (GitHub Global Search OR 쿼리 URL 사용)
           def build_markdown_tree(node_children, prefix_path=[], indent_level=0):
               lines = []
               sorted_keys = sorted(node_children.keys(), key=lambda x: x.lower())
@@ -101,13 +101,14 @@ jobs:
                   current_path = prefix_path + [key]
                   repo_count = len(child_node["_repos"])
                   
-                  # 해당 노드 및 하위에 속한 모든 태그 명칭 수집
                   all_topics = get_all_child_topics(child_node)
                   
-                  # Repositories 탭 검색창은 단어들을 띄어쓰기로 연결하면 모두 필터링해줌
-                  search_keywords = " ".join(sorted(all_topics))
-                  encoded_query = urllib.parse.quote(search_keywords)
-                  search_url = f"https://github.com/{user}?tab=repositories&q={encoded_query}"
+                  # user:jordy4777 topic:A OR topic:B 형태로 구성 (소괄호 제거)
+                  or_topics = " OR ".join([f"topic:{t}" for t in sorted(all_topics)])
+                  raw_query = f"user:{user} {or_topics}"
+                  
+                  encoded_query = urllib.parse.quote(raw_query)
+                  search_url = f"https://github.com/search?q={encoded_query}&type=repositories"
                   
                   indent = "  " * indent_level
                   lines.append(f"{indent}- [{key}]({search_url}) ({repo_count})")
@@ -143,7 +144,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with space-separated search query!")
+          print("Successfully updated README.md with Global Search OR queries!")
           EOF
 
       - name: Commit and Push Changes
@@ -152,7 +153,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: include all sub-topic keywords in search query"
+            git commit -m "chore: use global search OR query for topic map links"
             git push
           else
             echo "No changes detected in README.md"
