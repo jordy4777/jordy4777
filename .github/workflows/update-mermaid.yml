@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Multi-level Tag List with Repo Count
+      - name: Generate Multi-level Tag List with OR Search
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -32,6 +32,7 @@ jobs:
           import os
           import json
           import urllib.request
+          import urllib.parse
           import re
 
           user = os.environ['USER_NAME']
@@ -58,9 +59,9 @@ jobs:
                   print(f"API Error: {e}")
                   break
 
-          # 2. Multi-level 트리 및 레포지토리 매핑 구축
-          # node 구조: {"_children": {}, "_repos": set()}
-          tree = {"_children": {}, "_repos": set()}
+          # 2. Multi-level 트리 구축
+          # node 구조: {"_children": {}, "_repos": set(), "_full_topics": set()}
+          tree = {"_children": {}, "_repos": set(), "_full_topics": set()}
           untagged_repos = []
 
           for repo in repos:
@@ -79,11 +80,19 @@ jobs:
                   curr = tree
                   for part in parts:
                       if part not in curr["_children"]:
-                          curr["_children"][part] = {"_children": {}, "_repos": set()}
+                          curr["_children"][part] = {"_children": {}, "_repos": set(), "_full_topics": set()}
                       curr = curr["_children"][part]
                       curr["_repos"].add(repo_name)
+                      curr["_full_topics"].add(topic)
 
-          # 3. 마크다운 및 괄호 수량 표시 생성 함수
+          # 3. 하위 모든 full_topic을 수집하는 도우미 함수
+          def get_all_child_topics(node):
+              topics = set(node["_full_topics"])
+              for child in node["_children"].values():
+                  topics.update(get_all_child_topics(child))
+              return topics
+
+          # 4. 마크다운 및 OR 검색 URL 생성 함수
           def build_markdown_tree(node_children, prefix_path=[], indent_level=0):
               lines = []
               sorted_keys = sorted(node_children.keys(), key=lambda x: x.lower())
@@ -91,20 +100,22 @@ jobs:
               for key in sorted_keys:
                   child_node = node_children[key]
                   current_path = prefix_path + [key]
-                  full_topic = "-".join(current_path)
                   repo_count = len(child_node["_repos"])
                   
-                  has_sub_children = len(child_node["_children"]) > 0
-
-                  if has_sub_children:
-                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{full_topic}*"
-                  else:
-                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{full_topic}"
+                  # 해당 노드 및 하위 노드들의 전체 태그 목록 수집
+                  all_topics = get_all_child_topics(child_node)
+                  
+                  # topic:tag1 OR topic:tag2 형태로 검색 쿼리 구성
+                  query_parts = [f"topic:{t}" for t in sorted(all_topics)]
+                  raw_query = " OR ".join(query_parts)
+                  encoded_query = urllib.parse.quote(raw_query)
+                  
+                  search_url = f"https://github.com/{user}?tab=repositories&q={encoded_query}"
                   
                   indent = "  " * indent_level
                   lines.append(f"{indent}- [{key}]({search_url}) ({repo_count})")
                   
-                  if has_sub_children:
+                  if len(child_node["_children"]) > 0:
                       lines.extend(build_markdown_tree(child_node["_children"], current_path, indent_level + 1))
                       
               return lines
@@ -124,7 +135,7 @@ jobs:
 
           list_content = "\n".join(lines)
 
-          # 4. README.md 업데이트
+          # 5. README.md 업데이트
           with open("README.md", "r", encoding="utf-8") as f:
               readme = f.read()
 
@@ -135,7 +146,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with repo counts!")
+          print("Successfully updated README.md with OR search queries!")
           EOF
 
       - name: Commit and Push Changes
@@ -144,7 +155,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: display repo counts next to topics"
+            git commit -m "chore: fix topic search URL using OR operator"
             git push
           else
             echo "No changes detected in README.md"
