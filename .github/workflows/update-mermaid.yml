@@ -25,7 +25,8 @@ jobs:
 
       - name: Generate Nested Tag List with Links
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 👇 여기를 방금 만든 시크릿 이름으로 변경!
+          GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
         run: |
           python - << 'EOF'
@@ -41,7 +42,7 @@ jobs:
           repos = []
           page = 1
           while True:
-              url = f"https://api.github.com/user/repos?per_page=100&page={page}&affiliation=owner,collaborator"
+              url = f"https://api.github.com/user/repos?per_page=100&page={page}&affiliation=owner"
               req = urllib.request.Request(url, headers={
                   "Authorization": f"token {token}",
                   "User-Agent": "Python-Script",
@@ -63,7 +64,6 @@ jobs:
           untagged_repos = []
 
           for repo in repos:
-              # 프로필 레포지토리 자체 및 아카이브 레포 스킵
               if repo.get('archived') or repo['name'] == user:
                   continue
               
@@ -82,7 +82,7 @@ jobs:
 
                   category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
 
-          # 3. 마크다운 중첩 리스트 (Nested List) 생성
+          # 3. 마크다운 중첩 리스트 생성
           lines = ["### 🏷️ Repository Topics Map\n"]
 
           if not category_tree and not untagged_repos:
@@ -94,14 +94,13 @@ jobs:
                       topic_full = f"{cat}-{sub}" if sub != "general" else cat
                       search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{topic_full}"
                       
-                      # 하위 리스트 (클릭 시 해당 태그 검색으로 이동)
                       lines.append(f"  - 🔗 [{topic_full}]({search_url})")
 
-              # 태그가 없는 레포지토리도 맨 아래에 나열 원할 경우 (필요 없으면 제거 가능)
               if untagged_repos:
-                  lines.append("- **`untagged`**")
+                  lines.append("\n<details><summary><b>📂 태그 없는 레포지토리 목록 (클릭하여 열기)</b></summary>\n")
                   for r_name in sorted(untagged_repos):
-                      lines.append(f"  - [{r_name}](https://github.com/{user}/{r_name})")
+                      lines.append(f"- [{r_name}](https://github.com/{user}/{r_name})")
+                  lines.append("\n</details>")
 
           list_content = "\n".join(lines)
 
@@ -116,7 +115,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with Nested List!")
+          print("Successfully updated README.md with all repos!")
           EOF
 
       - name: Commit and Push Changes
