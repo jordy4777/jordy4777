@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      repository-projects: read
 
     steps:
       - name: Checkout Repository
@@ -37,28 +38,28 @@ jobs:
           user = os.environ['USER_NAME']
           token = os.environ['GH_TOKEN']
 
-          # 1. GitHub API 호출
-          url = f"https://api.github.com/users/{user}/repos?per_page=100&type=owner"
+          # 1. Private 레포 포함 전체 목록 가져오기 API (authenticated user API)
+          url = "https://api.github.com/user/repos?per_page=100&affiliation=owner"
           req = urllib.request.Request(url, headers={
               "Authorization": f"token {token}",
-              "User-Agent": "Python-Script"
+              "User-Agent": "Python-Script",
+              "Accept": "application/vnd.github+json"
           })
 
           with urllib.request.urlopen(req) as response:
               repos = json.loads(response.read().decode())
 
-          # 2. 태그(Topic)가 있는 레포만 분류
+          # 2. 태그(Topic)별 레포 분류
           category_tree = {}
 
           for repo in repos:
-              # 포크했거나 아카이브되었거나, '프로필 레포지토리 자신'은 제외
-              if repo.get('fork') or repo.get('archived') or repo['name'] == user:
+              # 프로필 레포지토리 자체나 아카이브된 레포만 스킵 (Fork 및 Private 포함!)
+              if repo.get('archived') or repo['name'] == user:
                   continue
               
               topics = repo.get('topics', [])
               repo_name = repo['name']
 
-              # 태그가 없으면 트리에 추가하지 않고 스킵
               if not topics:
                   continue
 
@@ -70,9 +71,10 @@ jobs:
 
                   category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
 
-          # 3. 만약 태그 달린 레포가 하나도 없을 때의 예외 처리
+          # 3. Mermaid 문법 생성
           if not category_tree:
-              mermaid_content = "```mermaid\ngraph TD\n    Root[" + user + "'s Repositories]\n    Root --> Notice[태그(Topic)가 달린 레포지토리가 없습니다]\n```"
+              # 괄호()를 제거하여 Mermaid 파싱 에러 방지
+              mermaid_content = "```mermaid\ngraph TD\n    Root[" + user + "'s Repositories]\n    Root --> Notice[태그가 달린 레포지토리가 없습니다]\n```"
           else:
               mermaid = ["```mermaid", "graph TD", f"    Root[{user}'s Repositories]"]
               click_events = []
@@ -96,7 +98,7 @@ jobs:
               mermaid.append("```")
               mermaid_content = "\n".join(mermaid)
 
-          # 4. README.md 업데이트
+          # 4. README.md 치환
           with open("README.md", "r", encoding="utf-8") as f:
               readme = f.read()
 
