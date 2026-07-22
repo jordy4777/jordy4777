@@ -23,9 +23,8 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Nested Tag List with Links
+      - name: Generate Multi-level Tag List with Repo Count
         env:
-          # 👇 여기를 방금 만든 시크릿 이름으로 변경!
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
         run: |
@@ -38,7 +37,7 @@ jobs:
           user = os.environ['USER_NAME']
           token = os.environ['GH_TOKEN']
 
-          # 1. 모든 레포지토리(Private, Fork 포함) 페이징 조회
+          # 1. 모든 레포지토리 API 수집
           repos = []
           page = 1
           while True:
@@ -59,8 +58,9 @@ jobs:
                   print(f"API Error: {e}")
                   break
 
-          # 2. 태그(Topic)별 정리
-          category_tree = {}
+          # 2. Multi-level 트리 및 레포지토리 매핑 구축
+          # node 구조: {"_children": {}, "_repos": set()}
+          tree = {"_children": {}, "_repos": set()}
           untagged_repos = []
 
           for repo in repos:
@@ -75,30 +75,50 @@ jobs:
                   continue
 
               for topic in topics:
-                  if '-' in topic:
-                      cat, sub = topic.split('-', 1)
+                  parts = topic.split('-')
+                  curr = tree
+                  for part in parts:
+                      if part not in curr["_children"]:
+                          curr["_children"][part] = {"_children": {}, "_repos": set()}
+                      curr = curr["_children"][part]
+                      curr["_repos"].add(repo_name)
+
+          # 3. 마크다운 및 괄호 수량 표시 생성 함수
+          def build_markdown_tree(node_children, prefix_path=[], indent_level=0):
+              lines = []
+              sorted_keys = sorted(node_children.keys(), key=lambda x: x.lower())
+              
+              for key in sorted_keys:
+                  child_node = node_children[key]
+                  current_path = prefix_path + [key]
+                  full_topic = "-".join(current_path)
+                  repo_count = len(child_node["_repos"])
+                  
+                  has_sub_children = len(child_node["_children"]) > 0
+
+                  if has_sub_children:
+                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{full_topic}*"
                   else:
-                      cat, sub = topic, "general"
+                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{full_topic}"
+                  
+                  indent = "  " * indent_level
+                  lines.append(f"{indent}- [{key}]({search_url}) ({repo_count})")
+                  
+                  if has_sub_children:
+                      lines.extend(build_markdown_tree(child_node["_children"], current_path, indent_level + 1))
+                      
+              return lines
 
-                  category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
-
-          # 3. 마크다운 중첩 리스트 생성
           lines = ["### 🏷️ Repository Topics Map\n"]
 
-          if not category_tree and not untagged_repos:
+          if not tree["_children"] and not untagged_repos:
               lines.append("- 레포지토리가 존재하지 않습니다.\n")
           else:
-              for cat, subs in sorted(category_tree.items()):
-                  lines.append(f"- **`{cat}`**")
-                  for sub, repo_list in sorted(subs.items()):
-                      topic_full = f"{cat}-{sub}" if sub != "general" else cat
-                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{topic_full}"
-                      
-                      lines.append(f"  - 🔗 [{topic_full}]({search_url})")
+              lines.extend(build_markdown_tree(tree["_children"]))
 
               if untagged_repos:
-                  lines.append("\n<details><summary><b>📂 태그 없는 레포지토리 목록 (클릭하여 열기)</b></summary>\n")
-                  for r_name in sorted(untagged_repos):
+                  lines.append(f"\n<details><summary><b>📂 태그 없는 레포지토리 목록 ({len(untagged_repos)})</b></summary>\n")
+                  for r_name in sorted(untagged_repos, key=lambda x: x.lower()):
                       lines.append(f"- [{r_name}](https://github.com/{user}/{r_name})")
                   lines.append("\n</details>")
 
@@ -115,7 +135,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with all repos!")
+          print("Successfully updated README.md with repo counts!")
           EOF
 
       - name: Commit and Push Changes
@@ -124,7 +144,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: auto-update repository tag list"
+            git commit -m "chore: display repo counts next to topics"
             git push
           else
             echo "No changes detected in README.md"
