@@ -2,11 +2,8 @@ name: Auto Update Mermaid Repositories Map
 
 on:
   schedule:
-    # 매일 00:00 UTC (아침 9시) 자동 실행
     - cron: '0 0 * * *'
-  # GitHub 웹상에서 'Run workflow' 버튼으로 언제든 수동 실행 가능
   workflow_dispatch:
-  # README.md 이외의 코드 변경 시 실행
   push:
     branches:
       - main
@@ -40,7 +37,7 @@ jobs:
           user = os.environ['USER_NAME']
           token = os.environ['GH_TOKEN']
 
-          # 1. GitHub API로 사용자의 전체 Public 레포지토리 및 Topic 수집
+          # 1. GitHub API 호출
           url = f"https://api.github.com/users/{user}/repos?per_page=100&type=owner"
           req = urllib.request.Request(url, headers={
               "Authorization": f"token {token}",
@@ -50,20 +47,19 @@ jobs:
           with urllib.request.urlopen(req) as response:
               repos = json.loads(response.read().decode())
 
-          # 2. 태그(Topic)별로 레포지토리 분류
-          # 하이픈(-) 기준으로 상위 카테고리 / 하위 태그 파싱 (예: obsidian-plugin -> obsidian / plugin)
+          # 2. 태그(Topic)가 있는 레포만 분류
           category_tree = {}
 
           for repo in repos:
-              if repo.get('fork') or repo.get('archived'):
+              # 포크했거나 아카이브되었거나, '프로필 레포지토리 자신'은 제외
+              if repo.get('fork') or repo.get('archived') or repo['name'] == user:
                   continue
               
               topics = repo.get('topics', [])
               repo_name = repo['name']
 
+              # 태그가 없으면 트리에 추가하지 않고 스킵
               if not topics:
-                  # 태그가 없는 레포지토리
-                  category_tree.setdefault("uncategorized", {}).setdefault("general", []).append(repo_name)
                   continue
 
               for topic in topics:
@@ -74,29 +70,31 @@ jobs:
 
                   category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
 
-          # 3. Mermaid Graph Syntax 생성
-          mermaid = ["```mermaid", "graph TD", f"    Root[{user}'s Repositories]"]
-          click_events = []
-          node_id = 0
+          # 3. 만약 태그 달린 레포가 하나도 없을 때의 예외 처리
+          if not category_tree:
+              mermaid_content = "```mermaid\ngraph TD\n    Root[" + user + "'s Repositories]\n    Root --> Notice[태그(Topic)가 달린 레포지토리가 없습니다]\n```"
+          else:
+              mermaid = ["```mermaid", "graph TD", f"    Root[{user}'s Repositories]"]
+              click_events = []
+              node_id = 0
 
-          for cat, subs in category_tree.items():
-              node_id += 1
-              cat_node = f"Cat_{node_id}"
-              mermaid.append(f"    Root --> {cat_node}[{cat}]")
-
-              for sub, repo_list in subs.items():
+              for cat, subs in category_tree.items():
                   node_id += 1
-                  sub_node = f"Sub_{node_id}"
-                  topic_full = f"{cat}-{sub}" if sub != "general" else cat
-                  mermaid.append(f"    {cat_node} --> {sub_node}[{topic_full}]")
-                  
-                  # 클릭 시 해당 태그 검색 결과 페이지로 이동하도록 설정
-                  search_url = f"[https://github.com/](https://github.com/){user}?tab=repositories&q=topic%3A{topic_full}"
-                  click_events.append(f'    click {sub_node} "{search_url}" "{topic_full} 태그 레포 보기"')
+                  cat_node = f"Cat_{node_id}"
+                  mermaid.append(f"    Root --> {cat_node}[{cat}]")
 
-          mermaid.extend(click_events)
-          mermaid.append("```")
-          mermaid_content = "\n".join(mermaid)
+                  for sub, repo_list in subs.items():
+                      node_id += 1
+                      sub_node = f"Sub_{node_id}"
+                      topic_full = f"{cat}-{sub}" if sub != "general" else cat
+                      mermaid.append(f"    {cat_node} --> {sub_node}[{topic_full}]")
+                      
+                      search_url = f"[https://github.com/](https://github.com/){user}?tab=repositories&q=topic%3A{topic_full}"
+                      click_events.append(f'    click {sub_node} "{search_url}" "{topic_full} 태그 레포 보기"')
+
+              mermaid.extend(click_events)
+              mermaid.append("```")
+              mermaid_content = "\n".join(mermaid)
 
           # 4. README.md 업데이트
           with open("README.md", "r", encoding="utf-8") as f:
@@ -109,7 +107,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with new Mermaid map!")
+          print("Successfully updated README.md!")
           EOF
 
       - name: Commit and Push Changes
