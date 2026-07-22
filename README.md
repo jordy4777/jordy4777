@@ -2,64 +2,97 @@
 
 ### 🏷️ Repository Topics Map
 
-- <details><summary><b><code>gemini</code></b> (1)</summary>
-
-  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+<ul>
+<li>
+<details><summary><b><code>gemini</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/paddle_reverse">paddle_reverse</a></li>
+</ul>
 </details>
-- <details><summary><b><code>ocr</code></b> (1)</summary>
-
-  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+</li>
+<li>
+<details><summary><b><code>ocr</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/paddle_reverse">paddle_reverse</a></li>
+</ul>
 </details>
-- <details><summary><b><code>paddleocr</code></b> (1)</summary>
-
-  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+</li>
+<li>
+<details><summary><b><code>paddleocr</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/paddle_reverse">paddle_reverse</a></li>
+</ul>
 </details>
-- <details><summary><b><code>pdf</code></b> (1)</summary>
-
-  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+</li>
+<li>
+<details><summary><b><code>pdf</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/paddle_reverse">paddle_reverse</a></li>
+</ul>
 </details>
-- <details><summary><b><code>productivity</code></b> (5)</summary>
-
-  - [brave-browser-plugin](https://github.com/jordy4777/brave-browser-plugin)
-  - [canvas-ai](https://github.com/jordy4777/canvas-ai)
-  - [skills](https://github.com/jordy4777/skills)
-  - [vtt-to-srt](https://github.com/jordy4777/vtt-to-srt)
-  - [zmk-config-totem](https://github.com/jordy4777/zmk-config-totem)
+</li>
+<li>
+<details><summary><b><code>productivity</code></b> (5)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/brave-browser-plugin">brave-browser-plugin</a></li>
+<li><a href="https://github.com/jordy4777/canvas-ai">canvas-ai</a></li>
+<li><a href="https://github.com/jordy4777/skills">skills</a></li>
+<li><a href="https://github.com/jordy4777/vtt-to-srt">vtt-to-srt</a></li>
+<li><a href="https://github.com/jordy4777/zmk-config-totem">zmk-config-totem</a></li>
+</ul>
 </details>
-  - <details><summary><b><code>browserextension</code></b> (1)</summary>
-
-    - [brave-browser-plugin](https://github.com/jordy4777/brave-browser-plugin)
-  </details>
-  - <details><summary><b><code>keyboard</code></b> (1)</summary>
-
-    - [zmk-config-totem](https://github.com/jordy4777/zmk-config-totem)
-  </details>
-  - <details><summary><b><code>obsidian</code></b> (1)</summary>
-
-    - [canvas-ai](https://github.com/jordy4777/canvas-ai)
-  </details>
-- <details><summary><b><code>wsl</code></b> (1)</summary>
-
-  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+<ul>
+<li>
+<details><summary><b><code>browserextension</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/brave-browser-plugin">brave-browser-plugin</a></li>
+</ul>
 </details>
-- <details><summary>🔴 <b><code>태그없음</code></b> (15)</summary>
-
-  - [ahk-scripts](https://github.com/jordy4777/ahk-scripts)
-  - [book-renamer](https://github.com/jordy4777/book-renamer)
-  - [browser-music-player](https://github.com/jordy4777/browser-music-player)
-  - [dice_roller](https://github.com/jordy4777/dice_roller)
-  - [extract-highlight](https://github.com/jordy4777/extract-highlight)
-  - [immersive-translator-kjh](https://github.com/jordy4777/immersive-translator-kjh)
-  - [marker-pdf](https://github.com/jordy4777/marker-pdf)
-  - [minimal-multi-timer](https://github.com/jordy4777/minimal-multi-timer)
-  - [pdf-figure-extractor](https://github.com/jordy4777/pdf-figure-extractor)
-  - [pdf-to-md-workbench](https://github.com/jordy4777/pdf-to-md-workbench)
-  - [recorder-with-pictures](https://github.com/jordy4777/recorder-with-pictures)
-  - [sajibang](https://github.com/jordy4777/sajibang)
-  - [spen-capture](https://github.com/jordy4777/spen-capture)
-  - [tablet-note-app](https://github.com/jordy4777/tablet-note-app)
-  - [talkkeyboard](https://github.com/jordy4777/talkkeyboard)
+</li>
+<li>
+<details><summary><b><code>keyboard</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/zmk-config-totem">zmk-config-totem</a></li>
+</ul>
 </details>
+</li>
+<li>
+<details><summary><b><code>obsidian</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/canvas-ai">canvas-ai</a></li>
+</ul>
+</details>
+</li>
+</ul>
+</li>
+<li>
+<details><summary><b><code>wsl</code></b> (1)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/paddle_reverse">paddle_reverse</a></li>
+</ul>
+</details>
+</li>
+</ul>
+<ul><li>
+<details><summary><font color="red"><b>태그없음</b></font> (15)</summary>
+<ul>
+<li><a href="https://github.com/jordy4777/ahk-scripts">ahk-scripts</a></li>
+<li><a href="https://github.com/jordy4777/book-renamer">book-renamer</a></li>
+<li><a href="https://github.com/jordy4777/browser-music-player">browser-music-player</a></li>
+<li><a href="https://github.com/jordy4777/dice_roller">dice_roller</a></li>
+<li><a href="https://github.com/jordy4777/extract-highlight">extract-highlight</a></li>
+<li><a href="https://github.com/jordy4777/immersive-translator-kjh">immersive-translator-kjh</a></li>
+<li><a href="https://github.com/jordy4777/marker-pdf">marker-pdf</a></li>
+<li><a href="https://github.com/jordy4777/minimal-multi-timer">minimal-multi-timer</a></li>
+<li><a href="https://github.com/jordy4777/pdf-figure-extractor">pdf-figure-extractor</a></li>
+<li><a href="https://github.com/jordy4777/pdf-to-md-workbench">pdf-to-md-workbench</a></li>
+<li><a href="https://github.com/jordy4777/recorder-with-pictures">recorder-with-pictures</a></li>
+<li><a href="https://github.com/jordy4777/sajibang">sajibang</a></li>
+<li><a href="https://github.com/jordy4777/spen-capture">spen-capture</a></li>
+<li><a href="https://github.com/jordy4777/tablet-note-app">tablet-note-app</a></li>
+<li><a href="https://github.com/jordy4777/talkkeyboard">talkkeyboard</a></li>
+</ul></details>
+</li></ul>
 
 <!-- MERMAID_END -->
 
