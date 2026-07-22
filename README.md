@@ -6,7 +6,7 @@
 - [ocr](https://github.com/jordy4777?tab=repositories&q=topic%3Aocr) (1)
 - [paddleocr](https://github.com/jordy4777?tab=repositories&q=topic%3Apaddleocr) (1)
 - [pdf](https://github.com/jordy4777?tab=repositories&q=topic%3Apdf) (1)
-- [productivity](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity*) (5)
+- [productivity](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity%20OR%20topic%3Aproductivity-browserextension%20OR%20topic%3Aproductivity-keyboard%20OR%20topic%3Aproductivity-obsidian) (5)
   - [browserextension](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-browserextension) (1)
   - [keyboard](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-keyboard) (1)
   - [obsidian](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-obsidian) (1)
