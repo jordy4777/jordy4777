@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Clear Tag Tree with Clickable Repo Toggles
+      - name: Generate Perfect Nested Tag Tree
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -37,14 +37,10 @@ jobs:
           user = os.environ['USER_NAME']
           token = os.environ['GH_TOKEN']
 
-          # =========================================================================
-          # 🎛️ 사용자 설정 토글
-          # INCLUDE_CHILD_REPOS = True  -> 상위 태그 토글 열 시 하위 태그 레포까지 포함
-          # INCLUDE_CHILD_REPOS = False -> 상위 태그 토글 열 시 해당 태그에 직접 속한 레포만 표시
-          # =========================================================================
+          # 🎛️ 상위 태그 토글을 열 때 하위 태그 레포까지 통합할지 여부
           INCLUDE_CHILD_REPOS = True
 
-          # 1. 모든 레포지토리 수집
+          # 1. 모든 레포지토리 API 수집
           repos = []
           page = 1
           while True:
@@ -100,9 +96,9 @@ jobs:
                   res.update(get_all_repos_recursive(sub_node))
               return res
 
-          # 4. 태그 계층은 그대로 노출되고, 레포지토리만 토글되는 마크다운 생성 함수
-          def render_tree(node_sub, indent=0):
-              lines = []
+          # 4. Pure HTML 기반 계층형 트리 렌더링 함수 (들여쓰기 보장)
+          def render_html_tree(node_sub):
+              lines = ["<ul>"]
               sorted_keys = sorted(node_sub.keys(), key=lambda x: x.lower())
 
               for key in sorted_keys:
@@ -114,38 +110,45 @@ jobs:
                       repos_to_show = child["_direct_repos"]
 
                   total_count = len(repos_to_show)
-                  space = "  " * indent
 
-                  # 하위에 연결된 레포지토리가 있는 경우 토글(<details>)로 생성
+                  lines.append("<li>")
+                  
+                  # 레포지토리가 있으면 토글로 묶음
                   if repos_to_show:
-                      lines.append(f"{space}- <details><summary><b><code>{key}</code></b> ({total_count})</summary>")
-                      lines.append("")
+                      lines.append(f"<details><summary><b><code>{key}</code></b> ({total_count})</summary>")
+                      lines.append("<ul>")
                       for r_name, r_url in sorted(repos_to_show.items(), key=lambda x: x[0].lower()):
-                          lines.append(f"{space}  - [{r_name}]({r_url})")
-                      lines.append(f"{space}</details>")
+                          lines.append(f'<li><a href="{r_url}">{r_name}</a></li>')
+                      lines.append("</ul>")
+                      lines.append("</details>")
                   else:
-                      lines.append(f"{space}- <b><code>{key}</code></b> (0)")
+                      lines.append(f"<b><code>{key}</code></b> (0)")
 
-                  # 하위 서브 태그 트리는 닫히지 않고 한눈에 연속 노출
+                  # 하위 태그가 있으면 <ul>로 감싸서 완벽하게 들여쓰기(Nested) 생성
                   if child["_sub"]:
-                      lines.extend(render_tree(child["_sub"], indent + 1))
+                      lines.extend(render_html_tree(child["_sub"]))
 
+                  lines.append("</li>")
+
+              lines.append("</ul>")
               return lines
 
           lines = ["### 🏷️ Repository Topics Map\n"]
 
           if not tree["_sub"] and not untagged_repos:
-              lines.append("- 레포지토리가 존재하지 않습니다.\n")
+              lines.append("<p>레포지토리가 존재하지 않습니다.</p>")
           else:
-              lines.extend(render_tree(tree["_sub"]))
+              lines.extend(render_html_tree(tree["_sub"]))
 
-              # 빨간색 태그없음 토글 추가 (🔴 + <code> 강조 적용)
+              # 빨간색 태그없음 항목 (font color="red" 적용)
               if untagged_repos:
-                  lines.append(f"- <details><summary>🔴 <b><code>태그없음</code></b> ({len(untagged_repos)})</summary>")
-                  lines.append("")
+                  lines.append("<ul><li>")
+                  lines.append(f'<details><summary><font color="red"><b>태그없음</b></font> ({len(untagged_repos)})</summary>')
+                  lines.append("<ul>")
                   for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x[0].lower()):
-                      lines.append(f"  - [{r_name}]({r_url})")
-                  lines.append("</details>")
+                      lines.append(f'<li><a href="{r_url}">{r_name}</a></li>')
+                  lines.append("</ul></details>")
+                  lines.append("</li></ul>")
 
           list_content = "\n".join(lines)
 
@@ -160,7 +163,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with visible nested tag tree!")
+          print("Successfully generated perfect nested tag tree!")
           EOF
 
       - name: Commit and Push Changes
@@ -169,7 +172,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: display visible nested tag tree with repo toggles and red untagged badge"
+            git commit -m "chore: fix nested html list structure and red tag color"
             git push
           else
             echo "No changes detected in README.md"
