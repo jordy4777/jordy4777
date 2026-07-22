@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Multi-level Tag List with OR Search
+      - name: Generate Multi-level Tag List with Global Search URL
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -60,7 +60,6 @@ jobs:
                   break
 
           # 2. Multi-level 트리 구축
-          # node 구조: {"_children": {}, "_repos": set(), "_full_topics": set()}
           tree = {"_children": {}, "_repos": set(), "_full_topics": set()}
           untagged_repos = []
 
@@ -85,14 +84,14 @@ jobs:
                       curr["_repos"].add(repo_name)
                       curr["_full_topics"].add(topic)
 
-          # 3. 하위 모든 full_topic을 수집하는 도우미 함수
+          # 3. 하위 모든 full_topic을 수집하는 함수
           def get_all_child_topics(node):
               topics = set(node["_full_topics"])
               for child in node["_children"].values():
                   topics.update(get_all_child_topics(child))
               return topics
 
-          # 4. 마크다운 및 OR 검색 URL 생성 함수
+          # 4. Global Search API 기준 URL 생성 함수
           def build_markdown_tree(node_children, prefix_path=[], indent_level=0):
               lines = []
               sorted_keys = sorted(node_children.keys(), key=lambda x: x.lower())
@@ -102,15 +101,19 @@ jobs:
                   current_path = prefix_path + [key]
                   repo_count = len(child_node["_repos"])
                   
-                  # 해당 노드 및 하위 노드들의 전체 태그 목록 수집
                   all_topics = get_all_child_topics(child_node)
                   
-                  # topic:tag1 OR topic:tag2 형태로 검색 쿼리 구성
-                  query_parts = [f"topic:{t}" for t in sorted(all_topics)]
-                  raw_query = " OR ".join(query_parts)
+                  # 단일 태그일 경우와 복수(OR) 태그 구분
+                  if len(all_topics) == 1:
+                      topic_str = f"topic:{list(all_topics)[0]}"
+                  else:
+                      topic_str = "(" + " OR ".join([f"topic:{t}" for t in sorted(all_topics)]) + ")"
+                  
+                  # GitHub Global Search URL 생성 (user:jordy4777 + topic OR 조건)
+                  raw_query = f"user:{user} {topic_str}"
                   encoded_query = urllib.parse.quote(raw_query)
                   
-                  search_url = f"https://github.com/{user}?tab=repositories&q={encoded_query}"
+                  search_url = f"https://github.com/search?q={encoded_query}&type=repositories"
                   
                   indent = "  " * indent_level
                   lines.append(f"{indent}- [{key}]({search_url}) ({repo_count})")
@@ -146,16 +149,16 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with OR search queries!")
+          print("Successfully updated README.md with Global Search URL!")
           EOF
 
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: fix topic search URL using OR operator"
+            git commit -m "chore: fix search URL using GitHub global search"
             git push
           else
             echo "No changes detected in README.md"
