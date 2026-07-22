@@ -1,0 +1,125 @@
+name: Auto Update Mermaid Repositories Map
+
+on:
+  schedule:
+    # 매일 00:00 UTC (아침 9시) 자동 실행
+    - cron: '0 0 * * *'
+  # GitHub 웹상에서 'Run workflow' 버튼으로 언제든 수동 실행 가능
+  workflow_dispatch:
+  # README.md 이외의 코드 변경 시 실행
+  push:
+    branches:
+      - main
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate Mermaid Mindmap with Click Links
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USER_NAME: ${{ github.repository_owner }}
+        run: |
+          python - << 'EOF'
+          import os
+          import json
+          import urllib.request
+          import re
+
+          user = os.environ['USER_NAME']
+          token = os.environ['GH_TOKEN']
+
+          # 1. GitHub API로 사용자의 전체 Public 레포지토리 및 Topic 수집
+          url = f"https://api.github.com/users/{user}/repos?per_page=100&type=owner"
+          req = urllib.request.Request(url, headers={
+              "Authorization": f"token {token}",
+              "User-Agent": "Python-Script"
+          })
+
+          with urllib.request.urlopen(req) as response:
+              repos = json.loads(response.read().decode())
+
+          # 2. 태그(Topic)별로 레포지토리 분류
+          # 하이픈(-) 기준으로 상위 카테고리 / 하위 태그 파싱 (예: obsidian-plugin -> obsidian / plugin)
+          category_tree = {}
+
+          for repo in repos:
+              if repo.get('fork') or repo.get('archived'):
+                  continue
+              
+              topics = repo.get('topics', [])
+              repo_name = repo['name']
+
+              if not topics:
+                  # 태그가 없는 레포지토리
+                  category_tree.setdefault("uncategorized", {}).setdefault("general", []).append(repo_name)
+                  continue
+
+              for topic in topics:
+                  if '-' in topic:
+                      cat, sub = topic.split('-', 1)
+                  else:
+                      cat, sub = topic, "general"
+
+                  category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
+
+          # 3. Mermaid Graph Syntax 생성
+          mermaid = ["```mermaid", "graph TD", f"    Root[{user}'s Repositories]"]
+          click_events = []
+          node_id = 0
+
+          for cat, subs in category_tree.items():
+              node_id += 1
+              cat_node = f"Cat_{node_id}"
+              mermaid.append(f"    Root --> {cat_node}[{cat}]")
+
+              for sub, repo_list in subs.items():
+                  node_id += 1
+                  sub_node = f"Sub_{node_id}"
+                  topic_full = f"{cat}-{sub}" if sub != "general" else cat
+                  mermaid.append(f"    {cat_node} --> {sub_node}[{topic_full}]")
+                  
+                  # 클릭 시 해당 태그 검색 결과 페이지로 이동하도록 설정
+                  search_url = f"[https://github.com/](https://github.com/){user}?tab=repositories&q=topic%3A{topic_full}"
+                  click_events.append(f'    click {sub_node} "{search_url}" "{topic_full} 태그 레포 보기"')
+
+          mermaid.extend(click_events)
+          mermaid.append("```")
+          mermaid_content = "\n".join(mermaid)
+
+          # 4. README.md 업데이트
+          with open("README.md", "r", encoding="utf-8") as f:
+              readme = f.read()
+
+          pattern = r"(<!-- MERMAID_START -->)([\s\S]*?)(<!-- MERMAID_END -->)"
+          replacement = f"\\1\n{mermaid_content}\n\\3"
+          new_readme = re.sub(pattern, replacement, readme)
+
+          with open("README.md", "w", encoding="utf-8") as f:
+              f.write(new_readme)
+
+          print("Successfully updated README.md with new Mermaid map!")
+          EOF
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: auto-update mermaid repositories map"
+            git push
+          else
+            echo "No changes detected in README.md"
+          fi
