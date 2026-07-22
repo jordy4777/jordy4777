@@ -1,4 +1,4 @@
-name: Auto Update Mermaid Repositories Map
+name: Auto Update Repositories Tag Tree
 
 on:
   schedule:
@@ -23,8 +23,9 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Mermaid Mindmap with Click Links
+      - name: Generate Nested Tag List with Links
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
         run: |
           python - << 'EOF'
@@ -34,30 +35,43 @@ jobs:
           import re
 
           user = os.environ['USER_NAME']
+          token = os.environ['GH_TOKEN']
 
-          # 1. Public 레포지토리 전체 목록 API 호출
-          url = f"https://api.github.com/users/{user}/repos?per_page=100&type=owner"
-          req = urllib.request.Request(url, headers={
-              "User-Agent": "Python-Script",
-              "Accept": "application/vnd.github+json"
-          })
+          # 1. 모든 레포지토리(Private, Fork 포함) 페이징 조회
+          repos = []
+          page = 1
+          while True:
+              url = f"https://api.github.com/user/repos?per_page=100&page={page}&affiliation=owner,collaborator"
+              req = urllib.request.Request(url, headers={
+                  "Authorization": f"token {token}",
+                  "User-Agent": "Python-Script",
+                  "Accept": "application/vnd.github+json"
+              })
+              try:
+                  with urllib.request.urlopen(req) as response:
+                      data = json.loads(response.read().decode())
+                      if not data:
+                          break
+                      repos.extend(data)
+                      page += 1
+              except Exception as e:
+                  print(f"API Error: {e}")
+                  break
 
-          with urllib.request.urlopen(req) as response:
-              repos = json.loads(response.read().decode())
-
-          # 2. 태그(Topic)별 레포 분류
+          # 2. 태그(Topic)별 정리
           category_tree = {}
+          untagged_repos = []
 
           for repo in repos:
-              # 프로필 레포지토리 자체나 아카이브된 레포는 스킵
+              # 프로필 레포지토리 자체 및 아카이브 레포 스킵
               if repo.get('archived') or repo['name'] == user:
                   continue
               
               topics = repo.get('topics', [])
               repo_name = repo['name']
 
-              # 태그가 없으면 스킵
               if not topics:
+                  untagged_repos.append(repo_name)
                   continue
 
               for topic in topics:
@@ -68,44 +82,41 @@ jobs:
 
                   category_tree.setdefault(cat, {}).setdefault(sub, []).append(repo_name)
 
-          # 3. Mermaid 그래프 구문 생성
-          if not category_tree:
-              mermaid_content = "```mermaid\ngraph TD\n    Root[" + user + "'s Repositories]\n    Root --> Notice[태그가 달린 Public 레포지토리가 없습니다]\n```"
+          # 3. 마크다운 중첩 리스트 (Nested List) 생성
+          lines = ["### 🏷️ Repository Topics Map\n"]
+
+          if not category_tree and not untagged_repos:
+              lines.append("- 레포지토리가 존재하지 않습니다.\n")
           else:
-              mermaid = ["```mermaid", "graph TD", f"    Root[{user}'s Repositories]"]
-              click_events = []
-              node_id = 0
-
-              for cat, subs in category_tree.items():
-                  node_id += 1
-                  cat_node = f"Cat_{node_id}"
-                  mermaid.append(f"    Root --> {cat_node}[{cat}]")
-
-                  for sub, repo_list in subs.items():
-                      node_id += 1
-                      sub_node = f"Sub_{node_id}"
+              for cat, subs in sorted(category_tree.items()):
+                  lines.append(f"- **`{cat}`**")
+                  for sub, repo_list in sorted(subs.items()):
                       topic_full = f"{cat}-{sub}" if sub != "general" else cat
-                      mermaid.append(f"    {cat_node} --> {sub_node}[{topic_full}]")
+                      search_url = f"https://github.com/{user}?tab=repositories&q=topic%3A{topic_full}"
                       
-                      search_url = f"[https://github.com/](https://github.com/){user}?tab=repositories&q=topic%3A{topic_full}"
-                      click_events.append(f'    click {sub_node} "{search_url}" "{topic_full} 태그 레포 보기"')
+                      # 하위 리스트 (클릭 시 해당 태그 검색으로 이동)
+                      lines.append(f"  - 🔗 [{topic_full}]({search_url})")
 
-              mermaid.extend(click_events)
-              mermaid.append("```")
-              mermaid_content = "\n".join(mermaid)
+              # 태그가 없는 레포지토리도 맨 아래에 나열 원할 경우 (필요 없으면 제거 가능)
+              if untagged_repos:
+                  lines.append("- **`untagged`**")
+                  for r_name in sorted(untagged_repos):
+                      lines.append(f"  - [{r_name}](https://github.com/{user}/{r_name})")
 
-          # 4. README.md 내 MERMAID 주석 위치 치환
+          list_content = "\n".join(lines)
+
+          # 4. README.md 업데이트
           with open("README.md", "r", encoding="utf-8") as f:
               readme = f.read()
 
           pattern = r"(<!-- MERMAID_START -->)([\s\S]*?)(<!-- MERMAID_END -->)"
-          replacement = f"\\1\n{mermaid_content}\n\\3"
+          replacement = f"\\1\n\n{list_content}\n\n\\3"
           new_readme = re.sub(pattern, replacement, readme)
 
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md!")
+          print("Successfully updated README.md with Nested List!")
           EOF
 
       - name: Commit and Push Changes
@@ -114,7 +125,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: auto-update mermaid repositories map"
+            git commit -m "chore: auto-update repository tag list"
             git push
           else
             echo "No changes detected in README.md"
