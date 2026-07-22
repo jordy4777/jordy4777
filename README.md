@@ -2,15 +2,25 @@
 
 ### 🏷️ Repository Topics Map
 
-- [gemini](https://github.com/search?q=user%3Ajordy4777%20topic%3Agemini&type=repositories) (1)
-- [ocr](https://github.com/search?q=user%3Ajordy4777%20topic%3Aocr&type=repositories) (1)
-- [paddleocr](https://github.com/search?q=user%3Ajordy4777%20topic%3Apaddleocr&type=repositories) (1)
-- [pdf](https://github.com/search?q=user%3Ajordy4777%20topic%3Apdf&type=repositories) (1)
-- [productivity](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity%20OR%20topic%3Aproductivity-browserextension%20OR%20topic%3Aproductivity-keyboard%20OR%20topic%3Aproductivity-obsidian&type=repositories) (5)
-  - [browserextension](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-browserextension&type=repositories) (1)
-  - [keyboard](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-keyboard&type=repositories) (1)
-  - [obsidian](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-obsidian&type=repositories) (1)
-- [wsl](https://github.com/search?q=user%3Ajordy4777%20topic%3Awsl&type=repositories) (1)
+- **`gemini`** (1)
+  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+- **`ocr`** (1)
+  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+- **`paddleocr`** (1)
+  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+- **`pdf`** (1)
+  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
+- **`productivity`** (5)
+  - [skills](https://github.com/jordy4777/skills)
+  - [vtt-to-srt](https://github.com/jordy4777/vtt-to-srt)
+  - **`browserextension`** (1)
+    - [brave-browser-plugin](https://github.com/jordy4777/brave-browser-plugin)
+  - **`keyboard`** (1)
+    - [zmk-config-totem](https://github.com/jordy4777/zmk-config-totem)
+  - **`obsidian`** (1)
+    - [canvas-ai](https://github.com/jordy4777/canvas-ai)
+- **`wsl`** (1)
+  - [paddle_reverse](https://github.com/jordy4777/paddle_reverse)
 
 <details><summary><b>📂 태그 없는 레포지토리 목록 (15)</b></summary>
 
