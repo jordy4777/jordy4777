@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Dynamic Tag Tree Generation
+      - name: Generate Collapsible Tag Tree
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -36,6 +36,13 @@ jobs:
 
           user = os.environ['USER_NAME']
           token = os.environ['GH_TOKEN']
+
+          # =========================================================================
+          # 🎛️ 사용자 설정 토글
+          # INCLUDE_CHILD_REPOS = True  -> 상위 태그 클릭 시 하위 태그의 레포지토리까지 전부 포함해서 표시
+          # INCLUDE_CHILD_REPOS = False -> 상위 태그에는 해당 태그가 직접 지정된 레포만 표시
+          # =========================================================================
+          INCLUDE_CHILD_REPOS = True
 
           # 1. 모든 레포지토리 수집
           repos = []
@@ -58,10 +65,9 @@ jobs:
                   print(f"API Error: {e}")
                   break
 
-          # 2. Multi-level 동적 트리 데이터 구조 구축
-          # node = {"_sub": {}, "_direct_repos": {}, "_all_repos": {}}
+          # 2. 트리 데이터 구조 구축
           def create_node():
-              return {"_sub": {}, "_direct_repos": {}, "_all_repos": {}}
+              return {"_sub": {}, "_direct_repos": {}}
 
           tree = create_node()
           untagged_repos = {}
@@ -81,37 +87,50 @@ jobs:
               for topic in topics:
                   parts = topic.split('-')
                   curr = tree
-                  curr["_all_repos"][r_name] = r_url
-                  
                   for part in parts:
                       if part not in curr["_sub"]:
                           curr["_sub"][part] = create_node()
                       curr = curr["_sub"][part]
-                      curr["_all_repos"][r_name] = r_url
-                  
-                  # 해당 하이픈 경로의 최하위 태그 노드에 레포 연결
                   curr["_direct_repos"][r_name] = r_url
 
-          # 3. 마크다운 동적 생성 함수
+          # 3. 하위 자식 노드의 모든 레포를 재귀적으로 수집하는 함수
+          def get_all_repos_recursive(node):
+              res = dict(node["_direct_repos"])
+              for sub_node in node["_sub"].values():
+                  res.update(get_all_repos_recursive(sub_node))
+              return res
+
+          # 4. 토글형 마크다운 생성 함수 (<details> 적용)
           def render_tree(node_sub, indent=0):
               lines = []
               sorted_keys = sorted(node_sub.keys(), key=lambda x: x.lower())
 
               for key in sorted_keys:
                   child = node_sub[key]
+                  
+                  # 설정 토글에 따른 레포지토리 집계
+                  if INCLUDE_CHILD_REPOS:
+                      repos_to_show = get_all_repos_recursive(child)
+                  else:
+                      repos_to_show = child["_direct_repos"]
+
+                  total_count = len(repos_to_show)
                   space = "  " * indent
-                  total_count = len(child["_all_repos"])
 
-                  # 카테고리 헤더
-                  lines.append(f"{space}- **`{key}`** ({total_count})")
+                  # 클릭해서 여는 토글 컨테이너(<details>) 생성
+                  lines.append(f"{space}<details>")
+                  lines.append(f"{space}<summary><b>{key}</b> ({total_count})</summary>\n")
 
-                  # 해당 태그 단계에 직접 포함된 레포지토리 출력
-                  for r_name, r_url in sorted(child["_direct_repos"].items(), key=lambda x: x[0].lower()):
-                      lines.append(f"{space}  - [{r_name}]({r_url})")
+                  if repos_to_show:
+                      for r_name, r_url in sorted(repos_to_show.items(), key=lambda x: x[0].lower()):
+                          lines.append(f"{space}- [{r_name}]({r_url})")
+                      lines.append("")
 
-                  # 하위 서브 카테고리가 존재하면 재귀적으로 렌더링
+                  # 하위 카테고리가 있으면 재귀 출력
                   if child["_sub"]:
                       lines.extend(render_tree(child["_sub"], indent + 1))
+
+                  lines.append(f"{space}</details>\n")
 
               return lines
 
@@ -122,15 +141,17 @@ jobs:
           else:
               lines.extend(render_tree(tree["_sub"]))
 
+              # 빨간색 태그없음 항목 추가
               if untagged_repos:
-                  lines.append(f"\n<details><summary><b>📂 태그 없는 레포지토리 목록 ({len(untagged_repos)})</b></summary>\n")
-                  for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x[0].lower()):
+                  lines.append("<details>")
+                  lines.append(f'<summary><span style="color: red;"><b>태그없음</b></span> ({len(untagged_repos)})</summary>\n')
+                  for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x.lower()):
                       lines.append(f"- [{r_name}]({r_url})")
-                  lines.append("\n</details>")
+                  lines.append("\n</details>\n")
 
           list_content = "\n".join(lines)
 
-          # 4. README.md 치환
+          # 5. README.md 치환
           with open("README.md", "r", encoding="utf-8") as f:
               readme = f.read()
 
@@ -141,7 +162,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully generated dynamic repository map!")
+          print("Successfully generated collapsible repository map!")
           EOF
 
       - name: Commit and Push Changes
@@ -150,7 +171,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: generate dynamic repository map"
+            git commit -m "chore: update to collapsible toggle tag map with red untagged section"
             git push
           else
             echo "No changes detected in README.md"
