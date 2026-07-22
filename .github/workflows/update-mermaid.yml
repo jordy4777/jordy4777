@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Collapsible Tag Tree
+      - name: Generate Clear Tag Tree with Clickable Repo Toggles
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -39,8 +39,8 @@ jobs:
 
           # =========================================================================
           # 🎛️ 사용자 설정 토글
-          # INCLUDE_CHILD_REPOS = True  -> 상위 태그 클릭 시 하위 태그의 레포지토리까지 전부 포함해서 표시
-          # INCLUDE_CHILD_REPOS = False -> 상위 태그에는 해당 태그가 직접 지정된 레포만 표시
+          # INCLUDE_CHILD_REPOS = True  -> 상위 태그 토글 열 시 하위 태그 레포까지 포함
+          # INCLUDE_CHILD_REPOS = False -> 상위 태그 토글 열 시 해당 태그에 직접 속한 레포만 표시
           # =========================================================================
           INCLUDE_CHILD_REPOS = True
 
@@ -93,14 +93,14 @@ jobs:
                       curr = curr["_sub"][part]
                   curr["_direct_repos"][r_name] = r_url
 
-          # 3. 하위 자식 노드의 모든 레포를 재귀적으로 수집하는 함수
+          # 3. 하위 자식 노드의 모든 레포 수집
           def get_all_repos_recursive(node):
               res = dict(node["_direct_repos"])
               for sub_node in node["_sub"].values():
                   res.update(get_all_repos_recursive(sub_node))
               return res
 
-          # 4. 토글형 마크다운 생성 함수 (<details> 적용)
+          # 4. 태그 계층은 그대로 노출되고, 레포지토리만 토글되는 마크다운 생성 함수
           def render_tree(node_sub, indent=0):
               lines = []
               sorted_keys = sorted(node_sub.keys(), key=lambda x: x.lower())
@@ -116,19 +116,19 @@ jobs:
                   total_count = len(repos_to_show)
                   space = "  " * indent
 
-                  # <details>와 마크다운 리스트 사이 개행 추가하여 파싱 보장
-                  lines.append(f"{space}<details>")
-                  lines.append(f"{space}<summary><b>{key}</b> ({total_count})</summary>\n")
-
+                  # 하위에 연결된 레포지토리가 있는 경우 토글(<details>)로 생성
                   if repos_to_show:
-                      for r_name, r_url in sorted(repos_to_show.items(), key=lambda x: x[0].lower()):
-                          lines.append(f"{space}- [{r_name}]({r_url})")
+                      lines.append(f"{space}- <details><summary><b><code>{key}</code></b> ({total_count})</summary>")
                       lines.append("")
+                      for r_name, r_url in sorted(repos_to_show.items(), key=lambda x: x[0].lower()):
+                          lines.append(f"{space}  - [{r_name}]({r_url})")
+                      lines.append(f"{space}</details>")
+                  else:
+                      lines.append(f"{space}- <b><code>{key}</code></b> (0)")
 
+                  # 하위 서브 태그 트리는 닫히지 않고 한눈에 연속 노출
                   if child["_sub"]:
                       lines.extend(render_tree(child["_sub"], indent + 1))
-
-                  lines.append(f"{space}</details>\n")
 
               return lines
 
@@ -139,13 +139,13 @@ jobs:
           else:
               lines.extend(render_tree(tree["_sub"]))
 
-              # 빨간색 태그없음 토글 추가 (튜플 정렬 키 x[0].lower() 수정 완료)
+              # 빨간색 태그없음 토글 추가 (🔴 + <code> 강조 적용)
               if untagged_repos:
-                  lines.append("<details>")
-                  lines.append(f'<summary><span style="color: red;"><b>태그없음</b></span> ({len(untagged_repos)})</summary>\n')
+                  lines.append(f"- <details><summary>🔴 <b><code>태그없음</code></b> ({len(untagged_repos)})</summary>")
+                  lines.append("")
                   for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x[0].lower()):
-                      lines.append(f"- [{r_name}]({r_url})")
-                  lines.append("\n</details>\n")
+                      lines.append(f"  - [{r_name}]({r_url})")
+                  lines.append("</details>")
 
           list_content = "\n".join(lines)
 
@@ -160,7 +160,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully generated collapsible repository map!")
+          print("Successfully updated README.md with visible nested tag tree!")
           EOF
 
       - name: Commit and Push Changes
@@ -169,7 +169,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: fix tuple sorting bug in untagged repos list"
+            git commit -m "chore: display visible nested tag tree with repo toggles and red untagged badge"
             git push
           else
             echo "No changes detected in README.md"
