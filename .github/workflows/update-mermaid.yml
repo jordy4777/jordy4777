@@ -108,7 +108,6 @@ jobs:
               for key in sorted_keys:
                   child = node_sub[key]
                   
-                  # 설정 토글에 따른 레포지토리 집계
                   if INCLUDE_CHILD_REPOS:
                       repos_to_show = get_all_repos_recursive(child)
                   else:
@@ -117,7 +116,7 @@ jobs:
                   total_count = len(repos_to_show)
                   space = "  " * indent
 
-                  # 클릭해서 여는 토글 컨테이너(<details>) 생성
+                  # <details>와 마크다운 리스트 사이 개행 추가하여 파싱 보장
                   lines.append(f"{space}<details>")
                   lines.append(f"{space}<summary><b>{key}</b> ({total_count})</summary>\n")
 
@@ -126,7 +125,6 @@ jobs:
                           lines.append(f"{space}- [{r_name}]({r_url})")
                       lines.append("")
 
-                  # 하위 카테고리가 있으면 재귀 출력
                   if child["_sub"]:
                       lines.extend(render_tree(child["_sub"], indent + 1))
 
@@ -141,11 +139,11 @@ jobs:
           else:
               lines.extend(render_tree(tree["_sub"]))
 
-              # 빨간색 태그없음 항목 추가
+              # 빨간색 태그없음 토글 추가 (튜플 정렬 키 x[0].lower() 수정 완료)
               if untagged_repos:
                   lines.append("<details>")
                   lines.append(f'<summary><span style="color: red;"><b>태그없음</b></span> ({len(untagged_repos)})</summary>\n')
-                  for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x.lower()):
+                  for r_name, r_url in sorted(untagged_repos.items(), key=lambda x: x[0].lower()):
                       lines.append(f"- [{r_name}]({r_url})")
                   lines.append("\n</details>\n")
 
@@ -171,7 +169,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update to collapsible toggle tag map with red untagged section"
+            git commit -m "chore: fix tuple sorting bug in untagged repos list"
             git push
           else
             echo "No changes detected in README.md"
