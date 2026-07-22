@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Tag Tree with Simple Repository Search
+      - name: Generate Tag Tree with Full Child Queries
         env:
           GH_TOKEN: ${{ secrets.MY_GIT_TOKEN }}
           USER_NAME: ${{ github.repository_owner }}
@@ -60,7 +60,7 @@ jobs:
                   break
 
           # 2. Multi-level 트리 구축
-          tree = {"_children": {}, "_repos": set()}
+          tree = {"_children": {}, "_repos": set(), "_full_topics": set()}
           untagged_repos = []
 
           for repo in repos:
@@ -79,11 +79,19 @@ jobs:
                   curr = tree
                   for part in parts:
                       if part not in curr["_children"]:
-                          curr["_children"][part] = {"_children": {}, "_repos": set()}
+                          curr["_children"][part] = {"_children": {}, "_repos": set(), "_full_topics": set()}
                       curr = curr["_children"][part]
                       curr["_repos"].add(repo_name)
+                      curr["_full_topics"].add(topic)
 
-          # 3. 마크다운 생성 (개인 레포 탭의 단순 키워드 검색 URL 사용)
+          # 3. 하위 노드들의 모든 full_topic 모으는 함수
+          def get_all_child_topics(node):
+              topics = set(node["_full_topics"])
+              for child in node["_children"].values():
+                  topics.update(get_all_child_topics(child))
+              return topics
+
+          # 4. 마크다운 생성 (하위 태그 키워드들을 띄어쓰기로 나열하여 통합 검색)
           def build_markdown_tree(node_children, prefix_path=[], indent_level=0):
               lines = []
               sorted_keys = sorted(node_children.keys(), key=lambda x: x.lower())
@@ -93,11 +101,12 @@ jobs:
                   current_path = prefix_path + [key]
                   repo_count = len(child_node["_repos"])
                   
-                  # full_topic (예: productivity 또는 productivity-keyboard)
-                  full_topic = "-".join(current_path)
+                  # 해당 노드 및 하위에 속한 모든 태그 명칭 수집
+                  all_topics = get_all_child_topics(child_node)
                   
-                  # 내 개인 Repositories 탭에서 해당 키워드로 직접 검색
-                  encoded_query = urllib.parse.quote(full_topic)
+                  # Repositories 탭 검색창은 단어들을 띄어쓰기로 연결하면 모두 필터링해줌
+                  search_keywords = " ".join(sorted(all_topics))
+                  encoded_query = urllib.parse.quote(search_keywords)
                   search_url = f"https://github.com/{user}?tab=repositories&q={encoded_query}"
                   
                   indent = "  " * indent_level
@@ -123,7 +132,7 @@ jobs:
 
           list_content = "\n".join(lines)
 
-          # 4. README.md 업데이트
+          # 5. README.md 업데이트
           with open("README.md", "r", encoding="utf-8") as f:
               readme = f.read()
 
@@ -134,7 +143,7 @@ jobs:
           with open("README.md", "w", encoding="utf-8") as f:
               f.write(new_readme)
 
-          print("Successfully updated README.md with simple repository search!")
+          print("Successfully updated README.md with space-separated search query!")
           EOF
 
       - name: Commit and Push Changes
@@ -143,7 +152,7 @@ jobs:
           git config --global user.email "github-actions[bot]"
           git add README.md
           if ! git diff --staged --quiet; then
-            git commit -m "chore: simplify search URL to support private repos and precise filtering"
+            git commit -m "chore: include all sub-topic keywords in search query"
             git push
           else
             echo "No changes detected in README.md"
