@@ -2,23 +2,17 @@
 
 ### 🏷️ Repository Topics Map
 
-- **`gemini`**
-  - 🔗 [gemini](https://github.com/jordy4777?tab=repositories&q=topic%3Agemini)
-- **`ocr`**
-  - 🔗 [ocr](https://github.com/jordy4777?tab=repositories&q=topic%3Aocr)
-- **`paddleocr`**
-  - 🔗 [paddleocr](https://github.com/jordy4777?tab=repositories&q=topic%3Apaddleocr)
-- **`pdf`**
-  - 🔗 [pdf](https://github.com/jordy4777?tab=repositories&q=topic%3Apdf)
-- **`productivity`**
-  - 🔗 [productivity-browserextension](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-browserextension)
-  - 🔗 [productivity](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity)
-  - 🔗 [productivity-keyboard](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-keyboard)
-  - 🔗 [productivity-obsidian](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-obsidian)
-- **`wsl`**
-  - 🔗 [wsl](https://github.com/jordy4777?tab=repositories&q=topic%3Awsl)
+- [gemini](https://github.com/jordy4777?tab=repositories&q=topic%3Agemini) (1)
+- [ocr](https://github.com/jordy4777?tab=repositories&q=topic%3Aocr) (1)
+- [paddleocr](https://github.com/jordy4777?tab=repositories&q=topic%3Apaddleocr) (1)
+- [pdf](https://github.com/jordy4777?tab=repositories&q=topic%3Apdf) (1)
+- [productivity](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity*) (5)
+  - [browserextension](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-browserextension) (1)
+  - [keyboard](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-keyboard) (1)
+  - [obsidian](https://github.com/jordy4777?tab=repositories&q=topic%3Aproductivity-obsidian) (1)
+- [wsl](https://github.com/jordy4777?tab=repositories&q=topic%3Awsl) (1)
 
-<details><summary><b>📂 태그 없는 레포지토리 목록 (클릭하여 열기)</b></summary>
+<details><summary><b>📂 태그 없는 레포지토리 목록 (15)</b></summary>
 
 - [ahk-scripts](https://github.com/jordy4777/ahk-scripts)
 - [book-renamer](https://github.com/jordy4777/book-renamer)
