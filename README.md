@@ -2,15 +2,15 @@
 
 ### 🏷️ Repository Topics Map
 
-- [gemini](https://github.com/jordy4777?tab=repositories&q=gemini) (1)
-- [ocr](https://github.com/jordy4777?tab=repositories&q=ocr) (1)
-- [paddleocr](https://github.com/jordy4777?tab=repositories&q=paddleocr) (1)
-- [pdf](https://github.com/jordy4777?tab=repositories&q=pdf) (1)
-- [productivity](https://github.com/jordy4777?tab=repositories&q=productivity%20productivity-browserextension%20productivity-keyboard%20productivity-obsidian) (5)
-  - [browserextension](https://github.com/jordy4777?tab=repositories&q=productivity-browserextension) (1)
-  - [keyboard](https://github.com/jordy4777?tab=repositories&q=productivity-keyboard) (1)
-  - [obsidian](https://github.com/jordy4777?tab=repositories&q=productivity-obsidian) (1)
-- [wsl](https://github.com/jordy4777?tab=repositories&q=wsl) (1)
+- [gemini](https://github.com/search?q=user%3Ajordy4777%20topic%3Agemini&type=repositories) (1)
+- [ocr](https://github.com/search?q=user%3Ajordy4777%20topic%3Aocr&type=repositories) (1)
+- [paddleocr](https://github.com/search?q=user%3Ajordy4777%20topic%3Apaddleocr&type=repositories) (1)
+- [pdf](https://github.com/search?q=user%3Ajordy4777%20topic%3Apdf&type=repositories) (1)
+- [productivity](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity%20OR%20topic%3Aproductivity-browserextension%20OR%20topic%3Aproductivity-keyboard%20OR%20topic%3Aproductivity-obsidian&type=repositories) (5)
+  - [browserextension](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-browserextension&type=repositories) (1)
+  - [keyboard](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-keyboard&type=repositories) (1)
+  - [obsidian](https://github.com/search?q=user%3Ajordy4777%20topic%3Aproductivity-obsidian&type=repositories) (1)
+- [wsl](https://github.com/search?q=user%3Ajordy4777%20topic%3Awsl&type=repositories) (1)
 
 <details><summary><b>📂 태그 없는 레포지토리 목록 (15)</b></summary>
 
